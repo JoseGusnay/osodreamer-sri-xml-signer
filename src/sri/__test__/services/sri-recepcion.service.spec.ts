@@ -1,7 +1,6 @@
-import { SRI_URLS, SRIEnv } from "../../const";
 import { SRIRejectedError } from "../../exceptions";
 import * as helpers from "../../helpers";
-import * as utils from "../../../utils";
+
 import { validateXml } from "../../services";
 
 // Mock helpers
@@ -43,7 +42,7 @@ describe("validarComprobante", () => {
 
     mockClient.validarComprobanteAsync.mockResolvedValue([mockRespuesta]);
 
-    const result = await validateXml(mockXml, "test");
+    const result = await validateXml({ xml: mockXml, env: "test" });
 
     expect(result.estado).toBe("RECIBIDA");
     expect(result.mensaje).toBe("Comprobante recibido correctamente");
@@ -71,7 +70,7 @@ describe("validarComprobante", () => {
 
     mockClient.validarComprobanteAsync.mockResolvedValue([mockRespuesta]);
 
-    await expect(validateXml(mockXml, "test")).rejects.toThrow(
+    await expect(validateXml({ xml: mockXml, env: "test" })).rejects.toThrow(
       SRIRejectedError
     );
   });
@@ -90,7 +89,7 @@ describe("validarComprobante", () => {
 
     mockClient.validarComprobanteAsync.mockResolvedValue([mockRespuesta]);
 
-    await expect(validateXml(mockXml, "test")).rejects.toThrow(
+    await expect(validateXml({ xml: mockXml, env: "test" })).rejects.toThrow(
       "Comprobante no recibido y sin mensaje explicativo del SRI"
     );
   });
@@ -102,7 +101,7 @@ describe("validarComprobante", () => {
 
     mockClient.validarComprobanteAsync.mockResolvedValue([mockRespuesta]);
 
-    await expect(validateXml(mockXml, "test")).rejects.toThrow(
+    await expect(validateXml({ xml: mockXml, env: "test" })).rejects.toThrow(
       "Respuesta inválida del SRI"
     );
   });
@@ -112,7 +111,7 @@ describe("validarComprobante", () => {
       new Error("Conexión fallida")
     );
 
-    await expect(validateXml(mockXml, "test")).rejects.toThrow(
+    await expect(validateXml({ xml: mockXml, env: "test" })).rejects.toThrow(
       "Error SOAP al validar comprobante: Conexión fallida"
     );
   });

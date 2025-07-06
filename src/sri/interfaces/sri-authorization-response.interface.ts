@@ -5,7 +5,7 @@ export interface SriAuthorizationMessage {
   informacionAdicional?: string;
 }
 
-export interface SriAuthorizationResult {
+export interface SriAuthorizationResponse {
   claveAcceso: string;
   estadoAutorizacion: string;
   comprobante: string;

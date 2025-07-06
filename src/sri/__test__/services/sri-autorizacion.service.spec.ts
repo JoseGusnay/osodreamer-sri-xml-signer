@@ -52,7 +52,7 @@ describe("authorizeXml", () => {
     (helpers.createSoapClient as jest.Mock).mockResolvedValue(mockClient);
     mockClient.autorizacionComprobanteAsync.mockResolvedValue([mockRespuesta]);
 
-    const result = await authorizeXml(mockClave, "test");
+    const result = await authorizeXml({ claveAcceso: mockClave, env: "test" });
 
     expect(result.estadoAutorizacion).toBe("AUTORIZADO");
     expect(result.claveAcceso).toBe(mockClave);
@@ -88,9 +88,9 @@ describe("authorizeXml", () => {
     (helpers.createSoapClient as jest.Mock).mockResolvedValue(mockClient);
     mockClient.autorizacionComprobanteAsync.mockResolvedValue([mockRespuesta]);
 
-    await expect(authorizeXml(mockClave, "prod")).rejects.toThrow(
-      SRIAutorizacionError
-    );
+    await expect(
+      authorizeXml({ claveAcceso: mockClave, env: "prod" })
+    ).rejects.toThrow(SRIAutorizacionError);
   });
 
   it("debería lanzar SRIUnauthorizedError si estado no autorizado sin mensaje", async () => {
@@ -109,9 +109,9 @@ describe("authorizeXml", () => {
     (helpers.createSoapClient as jest.Mock).mockResolvedValue(mockClient);
     mockClient.autorizacionComprobanteAsync.mockResolvedValue([mockRespuesta]);
 
-    await expect(authorizeXml(mockClave, "test")).rejects.toThrow(
-      SRIUnauthorizedError
-    );
+    await expect(
+      authorizeXml({ claveAcceso: mockClave, env: "test" })
+    ).rejects.toThrow(SRIUnauthorizedError);
   });
 
   it("debería lanzar error si no hay autorizaciones en la respuesta", async () => {
@@ -124,8 +124,8 @@ describe("authorizeXml", () => {
     (helpers.createSoapClient as jest.Mock).mockResolvedValue(mockClient);
     mockClient.autorizacionComprobanteAsync.mockResolvedValue([mockRespuesta]);
 
-    await expect(authorizeXml(mockClave, "test")).rejects.toThrow(
-      "No se recibió información de autorización del SRI"
-    );
+    await expect(
+      authorizeXml({ claveAcceso: mockClave, env: "test" })
+    ).rejects.toThrow("No se recibió información de autorización del SRI");
   });
 });

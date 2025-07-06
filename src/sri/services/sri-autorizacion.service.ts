@@ -1,16 +1,17 @@
-import { SRI_URLS, SRIEnv } from "../const";
+import { SRI_URLS } from "../const";
 import { createSoapClient, normalizeSriMessages } from "../helpers";
 
 import {
   SRIAutorizacionError,
   SRIUnauthorizedError,
 } from "../exceptions/sri-autorizacion.error";
-import { SriAuthorizationResult } from "../interfaces";
+import { SriAuthorizationResponse } from "../interfaces";
+import { AuthorizeXmlCommand } from "../interfaces";
 
 export async function authorizeXml(
-  claveAcceso: string,
-  env: SRIEnv
-): Promise<SriAuthorizationResult> {
+  data: AuthorizeXmlCommand
+): Promise<SriAuthorizationResponse> {
+  const { claveAcceso, env } = data;
   const client = await createSoapClient(SRI_URLS[env].autorizacion);
 
   const [result] = await client.autorizacionComprobanteAsync({

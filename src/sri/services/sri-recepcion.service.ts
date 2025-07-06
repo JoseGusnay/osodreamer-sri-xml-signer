@@ -1,13 +1,14 @@
 import { uint8ArrayToBase64 } from "../../utils";
-import { SRI_URLS, SRIEnv } from "../const";
+import { SRI_URLS } from "../const";
 import { SRIRejectedError } from "../exceptions";
 
 import { createSoapClient } from "../helpers";
+import { ValidateXmlCommand, ValidateXmlResponse } from "../interfaces";
 
 export async function validateXml(
-  xml: Uint8Array,
-  env: SRIEnv
-): Promise<{ estado: string; mensaje?: string }> {
+  data: ValidateXmlCommand
+): Promise<ValidateXmlResponse> {
+  const { env, xml } = data;
   const client = await createSoapClient(SRI_URLS[env].recepcion);
   const xmlBase64 = uint8ArrayToBase64(xml);
 
