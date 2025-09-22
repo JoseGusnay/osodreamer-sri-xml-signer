@@ -1,46 +1,129 @@
+// src/sri/__test__/services/sri-autorizacion.service.spec.ts
+
+import { SRIAutorizacionError, SRIUnauthorizedError } from "../../exceptions";
 import {
-  SRIAutorizacionError,
-  SRIUnauthorizedError,
-} from "../../exceptions/sri-autorizacion.error";
-import * as helpers from "../../helpers";
+  createSoapClient,
+  extractAutorizacionXml,
+  normalizeSriMessages,
+} from "../../helpers";
 import { authorizeXml } from "../../services";
 
-// Mock helpers
-jest.mock("../../helpers", () => ({
-  ...jest.requireActual("../../helpers"),
-  createSoapClient: jest.fn(),
-  normalizeSriMessages: jest.fn(() => []),
+// --- Mocks de módulos usados por authorizeXml ---
+jest.mock("../../const", () => ({
+  SRI_URLS: {
+    test: { autorizacion: "https://sri.example.test/autorizacion" },
+    prod: { autorizacion: "https://sri.example.prod/autorizacion" },
+  },
 }));
 
-describe("authorizeXml", () => {
-  const mockClave = "1234567890123456789012345678901234567890123456";
+const mockAutorizacionComprobanteAsync = jest.fn();
 
-  const mockClient = {
-    autorizacionComprobanteAsync: jest.fn(),
+jest.mock("../../helpers", () => {
+  // Si necesitas algunas utilidades reales de helpers, podrías importarlas aquí
+  // const original = jest.requireActual("../../helpers");
+  return {
+    // ...original,
+    createSoapClient: jest.fn(async () => ({
+      autorizacionComprobanteAsync: mockAutorizacionComprobanteAsync,
+    })),
+    extractAutorizacionXml: jest.fn(() => "<autorizacion>xml</autorizacion>"),
+    normalizeSriMessages: jest.fn((m) => m),
   };
+});
+
+describe("authorizeXml", () => {
+  const claveAcceso = "1234567890123456789012345678901234567890123456789";
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("debería devolver resultado autorizado correctamente", async () => {
-    const mockRespuesta = {
+  it("debe crear el cliente SOAP con la URL del env correcto", async () => {
+    (createSoapClient as unknown as jest.Mock).mockResolvedValue({
+      autorizacionComprobanteAsync: mockAutorizacionComprobanteAsync,
+    });
+
+    mockAutorizacionComprobanteAsync.mockResolvedValueOnce([
+      {
+        RespuestaAutorizacionComprobante: {
+          autorizaciones: {
+            autorizacion: {
+              estado: "AUTORIZADO",
+              claveAcceso: claveAcceso,
+              comprobante: "<xml/>",
+              numeroAutorizacion: "1790012345001",
+              fechaAutorizacion: "2025-09-21T10:20:30-05:00",
+              ambiente: "PRUEBAS",
+              mensajes: { mensaje: [] },
+            },
+          },
+        },
+      },
+      "<raw/>",
+    ]);
+
+    await authorizeXml({ claveAcceso, env: "test" } as any);
+
+    expect(createSoapClient).toHaveBeenCalledWith(
+      "https://sri.example.test/autorizacion"
+    );
+  });
+
+  it("retorna respuesta cuando estado es AUTORIZADO", async () => {
+    const respuestaOk = {
       RespuestaAutorizacionComprobante: {
-        claveAccesoConsultada: mockClave,
+        claveAccesoConsultada: claveAcceso,
         autorizaciones: {
           autorizacion: {
             estado: "AUTORIZADO",
-            claveAcceso: mockClave,
-            comprobante: "<xml>Comprobante</xml>",
-            numeroAutorizacion: "9999999999",
-            fechaAutorizacion: "2025-07-01T12:00:00Z",
-            ambiente: "1",
+            claveAcceso,
+            comprobante: "<comprobante/>",
+            numeroAutorizacion: "1790012345001",
+            fechaAutorizacion: "2025-09-21T10:20:30-05:00",
+            ambiente: "PRUEBAS",
+            mensajes: { mensaje: [{ mensaje: "OK" }] },
+          },
+        },
+      },
+    };
+
+    mockAutorizacionComprobanteAsync.mockResolvedValueOnce([
+      respuestaOk,
+      "<raw/>",
+    ]);
+
+    const result = await authorizeXml({ claveAcceso, env: "test" } as any);
+
+    expect(extractAutorizacionXml).toHaveBeenCalledWith("<raw/>");
+    expect(normalizeSriMessages).toHaveBeenCalled();
+    expect(result).toEqual({
+      claveAcceso,
+      estadoAutorizacion: "AUTORIZADO",
+      comprobante: "<comprobante/>",
+      comprobanteCrudo: "<autorizacion>xml</autorizacion>",
+      rucEmisor: "1790012345001",
+      fechaAutorizacion: "2025-09-21T10:20:30-05:00",
+      ambiente: "PRUEBAS",
+      mensajes: [{ mensaje: "OK" }],
+    });
+  });
+
+  it("lanza SRIAutorizacionError cuando estado es NO AUTORIZADO con mensaje", async () => {
+    const respuestaNoAut = {
+      RespuestaAutorizacionComprobante: {
+        claveAccesoConsultada: claveAcceso,
+        autorizaciones: {
+          autorizacion: {
+            estado: "NO AUTORIZADO",
+            ambiente: "PRODUCCION",
+            comprobante: "<comprobante/>",
             mensajes: {
               mensaje: [
                 {
-                  identificador: "00",
-                  mensaje: "Autorizado correctamente",
-                  tipo: "INFO",
+                  identificador: "45",
+                  // mensaje: "Clave de acceso inválida",
+                  informacionAdicional: "Detalle X",
+                  tipo: "ERROR",
                 },
               ],
             },
@@ -49,35 +132,41 @@ describe("authorizeXml", () => {
       },
     };
 
-    (helpers.createSoapClient as jest.Mock).mockResolvedValue(mockClient);
-    mockClient.autorizacionComprobanteAsync.mockResolvedValue([mockRespuesta]);
+    mockAutorizacionComprobanteAsync.mockResolvedValueOnce([
+      respuestaNoAut,
+      "<raw/>",
+    ]);
 
-    const result = await authorizeXml({ claveAcceso: mockClave, env: "test" });
+    const p = authorizeXml({ claveAcceso, env: "prod" } as any);
 
-    expect(result.estadoAutorizacion).toBe("AUTORIZADO");
-    expect(result.claveAcceso).toBe(mockClave);
-    expect(result.comprobante).toBe("<xml>Comprobante</xml>");
-    expect(result.rucEmisor).toBe("9999999999");
-    expect(result.fechaAutorizacion).toBe("2025-07-01T12:00:00Z");
-    expect(result.ambiente).toBe("1");
-    expect(helpers.normalizeSriMessages).toHaveBeenCalled();
+    await expect(p).rejects.toBeInstanceOf(SRIAutorizacionError);
+    await expect(p).rejects.toMatchObject({
+      estado: "NO AUTORIZADO",
+      identificador: "45",
+      // mensaje: "Clave de acceso inválida",
+      informacionAdicional: "Detalle X",
+      tipo: "ERROR",
+      claveAcceso,
+      ambiente: "PRODUCCION",
+      comprobanteXml: "<comprobante/>",
+    });
   });
 
-  it("debería lanzar SRIAutorizacionError si está NO AUTORIZADO con mensaje", async () => {
-    const mockRespuesta = {
+  it("lanza SRIAutorizacionError cuando estado es RECHAZADA con mensaje único (no array)", async () => {
+    const respuestaRech = {
       RespuestaAutorizacionComprobante: {
-        claveAccesoConsultada: mockClave,
+        claveAccesoConsultada: claveAcceso,
         autorizaciones: {
           autorizacion: {
-            estado: "NO AUTORIZADO",
-            ambiente: "2",
-            comprobante: "<xml>Error</xml>",
+            estado: "RECHAZADA",
+            ambiente: "PRODUCCION",
+            comprobante: "<comprobante/>",
             mensajes: {
               mensaje: {
-                identificador: "45",
-                mensaje: "Comprobante no autorizado",
+                identificador: "99",
+                // mensaje: "Documento duplicado",
+                informacionAdicional: "Ya fue autorizado antes",
                 tipo: "ERROR",
-                informacionAdicional: "Datos incorrectos",
               },
             },
           },
@@ -85,47 +174,84 @@ describe("authorizeXml", () => {
       },
     };
 
-    (helpers.createSoapClient as jest.Mock).mockResolvedValue(mockClient);
-    mockClient.autorizacionComprobanteAsync.mockResolvedValue([mockRespuesta]);
+    mockAutorizacionComprobanteAsync.mockResolvedValueOnce([
+      respuestaRech,
+      "<raw/>",
+    ]);
 
-    await expect(
-      authorizeXml({ claveAcceso: mockClave, env: "prod" })
-    ).rejects.toThrow(SRIAutorizacionError);
+    const p = authorizeXml({ claveAcceso, env: "prod" } as any);
+
+    await expect(p).rejects.toBeInstanceOf(SRIAutorizacionError);
+    await expect(p).rejects.toMatchObject({
+      estado: "RECHAZADA",
+      identificador: "99",
+      // mensaje: "Documento duplicado",
+    });
   });
 
-  it("debería lanzar SRIUnauthorizedError si estado no autorizado sin mensaje", async () => {
-    const mockRespuesta = {
+  it("lanza SRIUnauthorizedError cuando NO AUTORIZADO sin mensajes", async () => {
+    const respuestaSinMsg = {
       RespuestaAutorizacionComprobante: {
-        claveAccesoConsultada: mockClave,
+        claveAccesoConsultada: claveAcceso,
         autorizaciones: {
           autorizacion: {
-            estado: "RECHAZADA",
-            mensajes: null,
+            estado: "NO AUTORIZADO",
+            ambiente: "PRUEBAS",
+            comprobante: "<comprobante/>",
+            mensajes: undefined,
           },
         },
       },
     };
 
-    (helpers.createSoapClient as jest.Mock).mockResolvedValue(mockClient);
-    mockClient.autorizacionComprobanteAsync.mockResolvedValue([mockRespuesta]);
+    mockAutorizacionComprobanteAsync.mockResolvedValueOnce([
+      respuestaSinMsg,
+      "<raw/>",
+    ]);
 
     await expect(
-      authorizeXml({ claveAcceso: mockClave, env: "test" })
-    ).rejects.toThrow(SRIUnauthorizedError);
+      authorizeXml({ claveAcceso, env: "test" } as any)
+    ).rejects.toBeInstanceOf(SRIUnauthorizedError);
   });
 
-  it("debería lanzar error si no hay autorizaciones en la respuesta", async () => {
-    const mockRespuesta = {
+  it("lanza Error genérico cuando no hay autorizacion en la respuesta", async () => {
+    const respuestaVacia = {
       RespuestaAutorizacionComprobante: {
-        autorizaciones: null,
+        autorizaciones: {
+          autorizacion: undefined,
+        },
       },
     };
 
-    (helpers.createSoapClient as jest.Mock).mockResolvedValue(mockClient);
-    mockClient.autorizacionComprobanteAsync.mockResolvedValue([mockRespuesta]);
+    mockAutorizacionComprobanteAsync.mockResolvedValueOnce([
+      respuestaVacia,
+      "<raw/>",
+    ]);
 
     await expect(
-      authorizeXml({ claveAcceso: mockClave, env: "test" })
+      authorizeXml({ claveAcceso, env: "test" } as any)
     ).rejects.toThrow("No se recibió información de autorización del SRI");
+  });
+
+  it("lanza SRIUnauthorizedError en estado desconocido", async () => {
+    const respuestaDesconocido = {
+      RespuestaAutorizacionComprobante: {
+        autorizaciones: {
+          autorizacion: {
+            estado: "PENDIENTE", // no contemplado por la función
+            ambiente: "PRUEBAS",
+          },
+        },
+      },
+    };
+
+    mockAutorizacionComprobanteAsync.mockResolvedValueOnce([
+      respuestaDesconocido,
+      "<raw/>",
+    ]);
+
+    await expect(
+      authorizeXml({ claveAcceso, env: "test" } as any)
+    ).rejects.toBeInstanceOf(SRIUnauthorizedError);
   });
 });

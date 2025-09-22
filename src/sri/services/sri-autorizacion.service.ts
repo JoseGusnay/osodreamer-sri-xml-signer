@@ -1,5 +1,9 @@
 import { SRI_URLS } from "../const";
-import { createSoapClient, normalizeSriMessages } from "../helpers";
+import {
+  createSoapClient,
+  extractAutorizacionXml,
+  normalizeSriMessages,
+} from "../helpers";
 
 import {
   SRIAutorizacionError,
@@ -14,11 +18,13 @@ export async function authorizeXml(
   const { claveAcceso, env } = data;
   const client = await createSoapClient(SRI_URLS[env].autorizacion);
 
-  const [result] = await client.autorizacionComprobanteAsync({
+  const [result, rawResponse] = await client.autorizacionComprobanteAsync({
     claveAccesoComprobante: claveAcceso,
   });
+  const autorizacionXml = extractAutorizacionXml(rawResponse);
 
   const respuesta = result?.RespuestaAutorizacionComprobante;
+
   const autorizacion = respuesta?.autorizaciones?.autorizacion;
 
   if (!autorizacion || autorizacion.length === 0) {
@@ -32,6 +38,7 @@ export async function authorizeXml(
       claveAcceso: autorizacion.claveAcceso,
       estadoAutorizacion: estado,
       comprobante: autorizacion.comprobante,
+      comprobanteCrudo: autorizacionXml,
       rucEmisor: autorizacion.numeroAutorizacion ?? "",
       fechaAutorizacion: autorizacion.fechaAutorizacion,
       ambiente: autorizacion.ambiente,

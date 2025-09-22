@@ -1,6 +1,6 @@
 {
   "name": "osodreamer-sri-xml-signer",
-  "version": "0.0.8",
+  "version": "0.1.1",
   "description": "Genera, firma, valida y autoriza comprobantes electrónicos XML para el SRI de Ecuador con certificados digitales (.p12) y estándar XAdES-BES.",
   "author": {
     "name": "Jose Gusñay",

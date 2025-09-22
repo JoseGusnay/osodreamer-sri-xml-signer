@@ -12,5 +12,6 @@ export interface SriAuthorizationResponse {
   rucEmisor: string;
   fechaAutorizacion: string;
   ambiente: string;
+  comprobanteCrudo: string;
   mensajes: SriAuthorizationMessage[] | null;
 }
