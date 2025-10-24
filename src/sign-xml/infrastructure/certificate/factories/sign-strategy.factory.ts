@@ -4,6 +4,7 @@ import {
   BancoCentralStrategy,
   SecurityDataStrategy,
   UanatacaStrategy,
+  CorpnewbestStrategy,
 } from "../strategies";
 
 export class SignStrategyFactory {
@@ -11,6 +12,7 @@ export class SignStrategyFactory {
     new BancoCentralStrategy(),
     new SecurityDataStrategy(),
     new UanatacaStrategy(),
+    new CorpnewbestStrategy(),
   ];
 
   getStrategy(friendlyName: string): SignStrategy {

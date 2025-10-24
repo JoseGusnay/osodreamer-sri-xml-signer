@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node inspect-cert.js:*)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(node test-corpnewbest.js:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
