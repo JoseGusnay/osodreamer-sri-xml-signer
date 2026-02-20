@@ -1,7 +1,8 @@
-import * as forge from "node-forge";
+import { getForge } from "../../../utils/forge-loader";
 
 export class CryptoUtils {
-  hexToBase64(str: string): string {
+  async hexToBase64(str: string): Promise<string> {
+    const forge = await getForge();
     let hex = ("00" + str).slice(0 - str.length - (str.length % 2));
     const binary = hex
       .replace(/\r|\n/g, "")
@@ -11,7 +12,8 @@ export class CryptoUtils {
     return forge.util.encode64(binary);
   }
 
-  bigint3base64(bigint: bigint): string {
+  async bigint3base64(bigint: bigint): Promise<string> {
+    const forge = await getForge();
     const hex = bigint.toString(16).padStart(2, "0");
     const binary = hex
       .match(/\w{2}/g)

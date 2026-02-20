@@ -6,7 +6,7 @@ import { CertificateProviderImplement } from "../infrastructure/certificate/cert
 import { XmlDomContext } from "../infrastructure/xml-dom-context/xml-dom.context";
 import { ErrorHandler } from "../infrastructure/handlers";
 
-// 🧪 Mocks
+
 jest.mock("../infrastructure/validations/p12.validation");
 jest.mock("../infrastructure/certificate/certificate-provider.implement");
 jest.mock("../infrastructure/xml-dom-context/xml-dom.context");
@@ -32,9 +32,7 @@ describe("signXml", () => {
     jest.resetAllMocks();
 
     // Mock validación del P12
-    (validation.assertIsValidP12OrThrow as jest.Mock).mockImplementation(
-      () => {}
-    );
+    (validation.assertIsValidP12OrThrow as jest.Mock).mockResolvedValue(undefined);
 
     // Mock proveedor de certificado
     (CertificateProviderImplement as jest.Mock).mockImplementation(() => ({

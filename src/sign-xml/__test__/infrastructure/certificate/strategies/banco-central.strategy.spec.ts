@@ -21,7 +21,7 @@ describe("BancoCentralStrategy", () => {
   });
 
   describe("getPrivateKey", () => {
-    it("debería retornar item.key si está presente", () => {
+    it("debería retornar item.key si está presente", async () => {
       const fakeKey = { mock: "key" } as unknown as forge.pki.PrivateKey;
       const bags = [
         {
@@ -30,11 +30,11 @@ describe("BancoCentralStrategy", () => {
         } as unknown as forge.pkcs12.Bag,
       ];
 
-      const result = strategy.getPrivateKey(bags);
+      const result = await strategy.getPrivateKey(bags);
       expect(result).toBe(fakeKey);
     });
 
-    it("debería convertir y retornar item.asn1 si no hay key", () => {
+    it("debería convertir y retornar item.asn1 si no hay key", async () => {
       const fakeAsn1 = {} as forge.asn1.Asn1;
       const bags = [
         {
@@ -47,38 +47,38 @@ describe("BancoCentralStrategy", () => {
         .spyOn(forge.pki, "privateKeyFromAsn1")
         .mockReturnValue("convertedKey" as any);
 
-      const result = strategy.getPrivateKey(bags);
+      const result = await strategy.getPrivateKey(bags);
       expect(spy).toHaveBeenCalledWith(fakeAsn1);
       expect(result).toBe("convertedKey");
     });
 
-    it("debería lanzar SigningKeyNotFoundError si no encuentra ningún bag", () => {
+    it("debería lanzar SigningKeyNotFoundError si no encuentra ningún bag", async () => {
       const bags = [
         {
           attributes: { friendlyName: ["Otro Nombre"] },
         } as unknown as forge.pkcs12.Bag,
       ];
 
-      expect(() => strategy.getPrivateKey(bags)).toThrow(
+      await expect(strategy.getPrivateKey(bags)).rejects.toThrow(
         SigningKeyNotFoundError
       );
     });
 
-    it("debería lanzar PrivateKeyExtractionError si no hay key ni asn1", () => {
+    it("debería lanzar PrivateKeyExtractionError si no hay key ni asn1", async () => {
       const bags = [
         {
           attributes: { friendlyName: ["Signing Key"] },
         } as unknown as forge.pkcs12.Bag,
       ];
 
-      expect(() => strategy.getPrivateKey(bags)).toThrow(
+      await expect(strategy.getPrivateKey(bags)).rejects.toThrow(
         PrivateKeyExtractionError
       );
     });
   });
 
   describe("overrideIssuerName", () => {
-    it("debería retornar el issuer name formateado", () => {
+    it("debería retornar el issuer name formateado", async () => {
       const certBags = {
         [forge.pki.oids.certBag]: [
           {
@@ -95,7 +95,7 @@ describe("BancoCentralStrategy", () => {
         ],
       };
 
-      const result = strategy.overrideIssuerName(certBags as any);
+      const result = await strategy.overrideIssuerName(certBags as any);
       expect(result).toBe("CN=Autoridad de Certificación,O=Banco Central,C=EC");
     });
   });

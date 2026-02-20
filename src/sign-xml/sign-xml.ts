@@ -10,7 +10,7 @@ import { XmlDomContext } from "./infrastructure/xml-dom-context/xml-dom.context"
 
 export async function signXml(cmd: SignXmlRequest): Promise<string> {
   try {
-    assertIsValidP12OrThrow(cmd.p12Buffer, cmd.password);
+    await assertIsValidP12OrThrow(cmd.p12Buffer, cmd.password);
     const certProvider = new CertificateProviderImplement(
       cmd.p12Buffer,
       cmd.password,
