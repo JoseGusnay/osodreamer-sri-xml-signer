@@ -6,13 +6,15 @@ import {
   UanatacaStrategy,
 } from "../strategies";
 import { AnfacStrategy } from "../strategies/anfac.strategy";
+import { FirmaSeguraStrategy } from "../strategies/firma-segura.strategy";
 
 export class SignStrategyFactory {
   private readonly strategies: SignStrategy[] = [
     new BancoCentralStrategy(),
     new SecurityDataStrategy(),
     new UanatacaStrategy(),
-    new AnfacStrategy()
+    new AnfacStrategy(),
+    new FirmaSeguraStrategy(),
   ];
 
   getStrategy(friendlyName: string): SignStrategy {

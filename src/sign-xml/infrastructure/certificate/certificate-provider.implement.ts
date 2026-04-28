@@ -26,9 +26,12 @@ export class CertificateProviderImplement implements CertificateProviderPort {
     const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
     const certificates = certBags[forge.oids.certBag];
 
+    //si no existe firendlyName, buscar attribute organizationName u O en el issuer del certificado
     const friendlyName =
       certificates?.[1]?.attributes?.friendlyName?.[0] ??
-      certificates?.[0]?.cert?.issuer?.attributes?.[2]?.value;
+      certificates?.[0]?.cert?.issuer?.attributes?.find(
+        (attr: any) => attr.name === "organizationName" || attr.shortName === "O"
+      )?.value;
 
     const strategy = this.strategyFactory.getStrategy(friendlyName);
     const privateKey = await strategy.getPrivateKey(
