@@ -1,21 +1,21 @@
-import { CorpnewbestStrategy } from "../../../../infrastructure/certificate/strategies";
+import { FirmaseguraStrategy } from "../../../../infrastructure/certificate/strategies";
 import * as forge from "node-forge";
 import {
   PrivateKeyExtractionError,
   SigningKeyNotFoundError,
 } from "../../../../infrastructure/errors";
 
-describe("CorpnewbestStrategy", () => {
-  const strategy = new CorpnewbestStrategy();
+describe("FirmaseguraStrategy", () => {
+  const strategy = new FirmaseguraStrategy();
 
   describe("supports", () => {
-    it("debería retornar true si el nombre contiene 'CORPNEWBEST'", () => {
+    it("debería retornar true si el nombre contiene 'ENTIDAD DE CERTIFICACION DE INFORMACION'", () => {
       expect(
-        strategy.supports("AUTORIDAD DE CERTIFICACION RAIZ CA-1EF CORPNEWBEST")
+        strategy.supports("ENTIDAD DE CERTIFICACION DE INFORMACION-FIRMASEGURA")
       ).toBe(true);
     });
 
-    it("debería retornar false si el nombre no contiene 'CORPNEWBEST'", () => {
+    it("debería retornar false si el nombre no contiene la cadena esperada", () => {
       expect(strategy.supports("Otro Certificado")).toBe(false);
     });
   });
@@ -76,10 +76,10 @@ describe("CorpnewbestStrategy", () => {
               issuer: {
                 attributes: [
                   { shortName: "C", value: "EC" },
-                  { shortName: "O", value: "CORPNEWBEST CIA. LTDA." },
+                  { shortName: "O", value: "FIRMASEGURA S.A." },
                   {
                     shortName: "CN",
-                    value: "AUTORIDAD DE CERTIFICACION RAIZ CA-1EF CORPNEWBEST",
+                    value: "ENTIDAD DE CERTIFICACION DE INFORMACION",
                   },
                 ],
               },
@@ -90,7 +90,7 @@ describe("CorpnewbestStrategy", () => {
 
       const result = strategy.overrideIssuerName(certBags as any);
       expect(result).toBe(
-        "CN=AUTORIDAD DE CERTIFICACION RAIZ CA-1EF CORPNEWBEST,O=CORPNEWBEST CIA. LTDA.,C=EC"
+        "CN=ENTIDAD DE CERTIFICACION DE INFORMACION,O=FIRMASEGURA S.A.,C=EC"
       );
     });
   });

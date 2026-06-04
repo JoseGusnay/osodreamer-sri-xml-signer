@@ -1,21 +1,19 @@
-import { CorpnewbestStrategy } from "../../../../infrastructure/certificate/strategies";
+import { LazzateStrategy } from "../../../../infrastructure/certificate/strategies";
 import * as forge from "node-forge";
 import {
   PrivateKeyExtractionError,
   SigningKeyNotFoundError,
 } from "../../../../infrastructure/errors";
 
-describe("CorpnewbestStrategy", () => {
-  const strategy = new CorpnewbestStrategy();
+describe("LazzateStrategy", () => {
+  const strategy = new LazzateStrategy();
 
   describe("supports", () => {
-    it("debería retornar true si el nombre contiene 'CORPNEWBEST'", () => {
-      expect(
-        strategy.supports("AUTORIDAD DE CERTIFICACION RAIZ CA-1EF CORPNEWBEST")
-      ).toBe(true);
+    it("debería retornar true si el nombre contiene 'Lazzate'", () => {
+      expect(strategy.supports("Lazzate CA Ecuador")).toBe(true);
     });
 
-    it("debería retornar false si el nombre no contiene 'CORPNEWBEST'", () => {
+    it("debería retornar false si el nombre no contiene 'Lazzate'", () => {
       expect(strategy.supports("Otro Certificado")).toBe(false);
     });
   });
@@ -76,11 +74,8 @@ describe("CorpnewbestStrategy", () => {
               issuer: {
                 attributes: [
                   { shortName: "C", value: "EC" },
-                  { shortName: "O", value: "CORPNEWBEST CIA. LTDA." },
-                  {
-                    shortName: "CN",
-                    value: "AUTORIDAD DE CERTIFICACION RAIZ CA-1EF CORPNEWBEST",
-                  },
+                  { shortName: "O", value: "Lazzate CIA. LTDA." },
+                  { shortName: "CN", value: "Autoridad de Certificacion Lazzate" },
                 ],
               },
             },
@@ -90,7 +85,7 @@ describe("CorpnewbestStrategy", () => {
 
       const result = strategy.overrideIssuerName(certBags as any);
       expect(result).toBe(
-        "CN=AUTORIDAD DE CERTIFICACION RAIZ CA-1EF CORPNEWBEST,O=CORPNEWBEST CIA. LTDA.,C=EC"
+        "CN=Autoridad de Certificacion Lazzate,O=Lazzate CIA. LTDA.,C=EC"
       );
     });
   });
