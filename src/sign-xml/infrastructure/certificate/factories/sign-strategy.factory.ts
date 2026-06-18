@@ -4,6 +4,9 @@ import {
   BancoCentralStrategy,
   SecurityDataStrategy,
   UanatacaStrategy,
+  CorpnewbestStrategy,
+  LazzateStrategy,
+  FirmaseguraStrategy,
 } from "../strategies";
 import { AnfacStrategy } from "../strategies/anfac.strategy";
 
@@ -12,6 +15,9 @@ export class SignStrategyFactory {
     new BancoCentralStrategy(),
     new SecurityDataStrategy(),
     new UanatacaStrategy(),
+    new CorpnewbestStrategy(),
+    new LazzateStrategy(),
+    new FirmaseguraStrategy(),
     new AnfacStrategy()
   ];
 
