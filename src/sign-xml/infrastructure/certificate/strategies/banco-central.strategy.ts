@@ -1,4 +1,4 @@
-import * as forge from "node-forge";
+import { getForge } from "../../../../utils/forge-loader";
 import { SignStrategy } from "../../interfaces";
 import {
   PrivateKeyExtractionError,
@@ -10,9 +10,10 @@ export class BancoCentralStrategy implements SignStrategy {
     return /BANCO CENTRAL/i.test(friendlyName);
   }
 
-  getPrivateKey(
-    bags: forge.pkcs12.Bag[]
-  ): forge.pki.PrivateKey | forge.asn1.Asn1 {
+  async getPrivateKey(
+    bags: any[]
+  ): Promise<any> {
+    const forge = await getForge();
     const item = bags.find((bag) =>
       /Signing Key/i.test(bag.attributes?.friendlyName?.[0])
     );
@@ -28,11 +29,12 @@ export class BancoCentralStrategy implements SignStrategy {
     }
   }
 
-  overrideIssuerName(certBags: forge.pkcs12.Bag[]): string {
+  async overrideIssuerName(certBags: any): Promise<string> {
+    const forge = await getForge();
     const cert = certBags[forge.pki.oids.certBag][0].cert;
     return cert.issuer.attributes
       .reverse()
-      .map((attr) => `${attr.shortName}=${attr.value}`)
+      .map((attr: any) => `${attr.shortName}=${attr.value}`)
       .join(",");
   }
 }

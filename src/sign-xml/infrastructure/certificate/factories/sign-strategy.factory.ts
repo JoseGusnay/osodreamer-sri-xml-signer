@@ -8,6 +8,7 @@ import {
   LazzateStrategy,
   FirmaseguraStrategy,
 } from "../strategies";
+import { AnfacStrategy } from "../strategies/anfac.strategy";
 
 export class SignStrategyFactory {
   private readonly strategies: SignStrategy[] = [
@@ -17,6 +18,7 @@ export class SignStrategyFactory {
     new CorpnewbestStrategy(),
     new LazzateStrategy(),
     new FirmaseguraStrategy(),
+    new AnfacStrategy()
   ];
 
   getStrategy(friendlyName: string): SignStrategy {

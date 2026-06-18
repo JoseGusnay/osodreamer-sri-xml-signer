@@ -8,7 +8,7 @@ Librer√≠a Node.js para generar, firmar, validar y autorizar comprobantes electr√
 ---
 
 <p align="center">
-  <a href="https://yueyuuta.github.io/osodreamer-sri-xml-signer-docs/docs/" target="_blank" style="
+  <a href="https://JoseGusnay.github.io/osodreamer-sri-xml-signer-docs/docs/" target="_blank" style="
     display: inline-block;
     text-align: center;
     padding: 18px 24px;
@@ -18,7 +18,7 @@ Librer√≠a Node.js para generar, firmar, validar y autorizar comprobantes electr√
     box-shadow: 0 4px 14px rgba(0,0,0,0.4);
     transition: transform 0.2s ease;
   " onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
-    <img src="https://yueyuuta.github.io/osodreamer-sri-xml-signer-docs/osodreamer.png" alt="osodreamer logo" width="100" style="display:block; margin: 0 auto 12px;" />
+    <img src="https://JoseGusnay.github.io/osodreamer-sri-xml-signer-docs/osodreamer.png" alt="osodreamer logo" width="100" style="display:block; margin: 0 auto 12px;" />
     <span style="
       display: block;
       color: #f2f2f2;

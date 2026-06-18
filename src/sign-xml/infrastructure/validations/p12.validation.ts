@@ -1,16 +1,19 @@
-import * as forge from "node-forge";
+
+import { getForge } from "../../../utils/forge-loader";
 import { InvalidP12PasswordError, InvalidP12StructureError } from "../errors";
 
-export function assertIsValidP12OrThrow(
+export async function assertIsValidP12OrThrow(
   buffer: Buffer | Uint8Array,
   password: string
-): void {
+): Promise<void> {
+  const forge = await getForge();
+
   // 1. Convertir binario correctamente
   const binaryStr = Array.from(buffer)
     .map((b) => String.fromCharCode(b))
     .join("");
 
-  let asn1: forge.asn1.Asn1;
+  let asn1: any;
   try {
     asn1 = forge.asn1.fromDer(forge.util.createBuffer(binaryStr, "binary"));
   } catch {

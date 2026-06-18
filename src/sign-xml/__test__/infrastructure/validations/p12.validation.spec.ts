@@ -29,33 +29,33 @@ describe("assertIsValidP12OrThrow", () => {
     jest.clearAllMocks();
   });
 
-  it("should throw InvalidP12StructureError if ASN.1 parsing fails", () => {
+  it("should throw InvalidP12StructureError if ASN.1 parsing fails", async () => {
     (forge.asn1.fromDer as jest.Mock).mockImplementation(() => {
       throw new Error("ASN1 Error");
     });
 
-    expect(() => assertIsValidP12OrThrow(mockBuffer, "password")).toThrow(
+    await expect(assertIsValidP12OrThrow(mockBuffer, "password")).rejects.toThrow(
       InvalidP12StructureError
     );
   });
 
-  it("should throw InvalidP12PasswordError if password is invalid", () => {
+  it("should throw InvalidP12PasswordError if password is invalid", async () => {
     (forge.asn1.fromDer as jest.Mock).mockReturnValue("fake-asn1");
     (forge.pkcs12.pkcs12FromAsn1 as jest.Mock).mockImplementation(() => {
       throw new Error("Bad password");
     });
 
-    expect(() => assertIsValidP12OrThrow(mockBuffer, "wrong-password")).toThrow(
+    await expect(assertIsValidP12OrThrow(mockBuffer, "wrong-password")).rejects.toThrow(
       InvalidP12PasswordError
     );
   });
 
-  it("should not throw if structure and password are correct", () => {
+  it("should not throw if structure and password are correct", async () => {
     (forge.asn1.fromDer as jest.Mock).mockReturnValue("ok-asn1");
     (forge.pkcs12.pkcs12FromAsn1 as jest.Mock).mockReturnValue({});
 
-    expect(() =>
+    await expect(
       assertIsValidP12OrThrow(mockBuffer, "correct-password")
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
 });

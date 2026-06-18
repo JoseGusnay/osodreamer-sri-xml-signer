@@ -1,4 +1,4 @@
-import * as forge from "node-forge";
+import { getForge } from "../../../utils/forge-loader";
 import { CertificateProviderPort } from "../../domain/ports";
 import { ParsedP12Certificate } from "../../domain/interfaces/parsed-p12-certificate.interface";
 import { SignStrategyFactory } from "./factories";
@@ -10,9 +10,10 @@ export class CertificateProviderImplement implements CertificateProviderPort {
     private readonly password: string,
     private readonly strategyFactory: SignStrategyFactory,
     private readonly crypto: CryptoUtils
-  ) {}
+  ) { }
 
   async getCertificateData(): Promise<ParsedP12Certificate> {
+    const forge = await getForge();
     const uint8Array = new Uint8Array(this.p12Buffer);
     const p12Base64 = forge.util.binary.base64.encode(uint8Array);
     const p12Decoded = forge.util.decode64(p12Base64);
@@ -30,10 +31,10 @@ export class CertificateProviderImplement implements CertificateProviderPort {
       certificates?.[0]?.cert?.issuer?.attributes?.[2]?.value;
 
     const strategy = this.strategyFactory.getStrategy(friendlyName);
-    const privateKey = strategy.getPrivateKey(
+    const privateKey = await strategy.getPrivateKey(
       keyBags[forge.oids.pkcs8ShroudedKeyBag]
     );
-    const issuerName = strategy.overrideIssuerName(certBags);
+    const issuerName = await strategy.overrideIssuerName(certBags);
 
     const mainCertificate = certificates.reduce((prev, current) => {
       return current.cert.extensions.length > prev.cert.extensions.length
@@ -52,8 +53,10 @@ export class CertificateProviderImplement implements CertificateProviderPort {
     ).toString();
 
     const certificateX509 = forge.util.encode64(certificateX509_der.bytes());
-    const exponent = this.crypto.hexToBase64(privateKey.e.data[0].toString(16));
-    const modulus = this.crypto.bigint3base64(privateKey.n);
+    const exponent = await this.crypto.hexToBase64(
+      privateKey.e.data[0].toString(16)
+    );
+    const modulus = await this.crypto.bigint3base64(privateKey.n);
 
     return {
       certificate,
