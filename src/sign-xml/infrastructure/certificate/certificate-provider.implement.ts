@@ -31,16 +31,50 @@ export class CertificateProviderImplement implements CertificateProviderPort {
       certificates?.[0]?.cert?.issuer?.attributes?.[2]?.value;
 
     const strategy = this.strategyFactory.getStrategy(friendlyName);
+
+    console.log(`[CertProvider] strategy=${strategy.constructor.name} friendlyName="${friendlyName}"`);
+    console.log(`[CertProvider] Total cert bags: ${certificates.length}`);
+    certificates.forEach((bag: any, i: number) => {
+      const cert = bag.cert;
+      const bcExt = cert?.extensions?.find((e: any) => e.name === 'basicConstraints');
+      const fn = bag?.attributes?.friendlyName?.[0] ?? 'n/a';
+      const cn = cert?.subject?.attributes?.find((a: any) => a.name === 'commonName')?.value ?? 'n/a';
+      const notAfter = cert?.validity?.notAfter?.toISOString() ?? 'n/a';
+      const extCount = cert?.extensions?.length ?? 0;
+      console.log(`[CertProvider]   cert[${i}] fn="${fn}" cn="${cn}" extensions=${extCount} notAfter=${notAfter} isCA=${!!bcExt?.cA}`);
+    });
+
     const privateKey = await strategy.getPrivateKey(
       keyBags[forge.oids.pkcs8ShroudedKeyBag]
     );
-    const issuerName = await strategy.overrideIssuerName(certBags);
+    console.log(`[CertProvider] privateKey n length=${privateKey?.n?.toString(16)?.length}`);
 
-    const mainCertificate = certificates.reduce((prev, current) => {
-      return current.cert.extensions.length > prev.cert.extensions.length
-        ? current
-        : prev;
+    // Select the cert whose public key modulus matches the signing private key.
+    // Fallback to max-extensions heuristic if no match found.
+    const byKey = certificates.find((bag: any) => {
+      try {
+        return bag.cert?.publicKey?.n?.toString(16) === privateKey.n.toString(16);
+      } catch (_) { return false; }
     });
+    if (byKey) {
+      const fn = byKey?.attributes?.friendlyName?.[0] ?? 'n/a';
+      console.log(`[CertProvider] mainCertificate => BY KEY MATCH fn="${fn}"`);
+    } else {
+      console.warn('[CertProvider] mainCertificate => KEY MATCH failed, using max-extensions fallback');
+    }
+    const mainCertificate = byKey ?? certificates.reduce((prev: any, current: any) => {
+      return current.cert.extensions.length > prev.cert.extensions.length ? current : prev;
+    });
+
+    // issuerName from mainCertificate to ensure IssuerSerial consistency in XAdES.
+    const issuerName = mainCertificate.cert.issuer.attributes
+      .slice()
+      .reverse()
+      .map((attr: any) => `${attr.shortName || attr.type}=${attr.value}`)
+      .join(',');
+    console.log(`[CertProvider] issuerName="${issuerName}"`);
+    console.log(`[CertProvider] serialNumber="${mainCertificate.cert.serialNumber}"`);
+
     const certificate = mainCertificate.cert;
     const certificateX509_asn1 = forge.pki.certificateToAsn1(certificate);
     const certificateX509_der = forge.asn1.toDer(certificateX509_asn1);

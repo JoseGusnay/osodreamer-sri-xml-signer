@@ -14,11 +14,21 @@ export class BancoCentralStrategy implements SignStrategy {
     bags: any[]
   ): Promise<any> {
     const forge = await getForge();
+    console.log(`[BancoCentral] Total key bags: ${bags.length}`);
+    bags.forEach((bag: any, i: number) => {
+      const fn = bag?.attributes?.friendlyName?.[0] ?? 'n/a';
+      console.log(`[BancoCentral]   key[${i}] fn="${fn}"`);
+    });
+
     const item = bags.find((bag) =>
       /Signing Key/i.test(bag.attributes?.friendlyName?.[0])
     );
 
-    if (!item) throw new SigningKeyNotFoundError("BANCO CENTRAL");
+    if (!item) {
+      console.error('[BancoCentral] ERROR: No key bag with "Signing Key" found!');
+      throw new SigningKeyNotFoundError("BANCO CENTRAL");
+    }
+    console.log(`[BancoCentral] Signing key found: fn="${item?.attributes?.friendlyName?.[0]}"`)
 
     if (item?.key) {
       return item.key;
