@@ -47,7 +47,13 @@ jest.mock("node-forge", () => {
                 cert: {
                   serialNumber: "abcdef1234",
                   extensions: [1, 2, 3],
-                  issuer: { attributes: [{}, {}, { value: "FallbackName" }] },
+                  issuer: {
+                    attributes: [
+                      { shortName: "C", value: "EC" },
+                      { shortName: "O", value: "BCE" },
+                      { shortName: "CN", value: "Test Cert" },
+                    ],
+                  },
                 },
                 attributes: { friendlyName: ["correctName"] },
               },
@@ -94,13 +100,12 @@ describe("ForgeCertificateProviderImplement", () => {
 
     expect(result.certificate).toBeDefined();
     expect(result.privateKey).toBeDefined();
-    expect(result.issuerName).toBe("Mocked Issuer");
+    expect(result.issuerName).toBe("CN=Test Cert,O=BCE,C=EC");
     expect(result.publicKey.exponent).toBe("mockedExponent");
     expect(result.publicKey.modulus).toBe("mockedModulus");
     expect(result.serialNumber).toBe("1234567890");
 
     expect(mockStrategy.getPrivateKey).toHaveBeenCalled();
-    expect(mockStrategy.overrideIssuerName).toHaveBeenCalled();
   });
   it("debería usar el issuer como friendlyName si no hay friendlyName", async () => {
     const realFactory = new SignStrategyFactory();
@@ -202,7 +207,13 @@ describe("ForgeCertificateProviderImplement", () => {
               cert: {
                 serialNumber: "abc123",
                 extensions: [1],
-                issuer: { attributes: [{}, {}, { value: "FallbackUsed" }] },
+                issuer: {
+                  attributes: [
+                    { shortName: "C", value: "EC" },
+                    { shortName: "O", value: "BCE" },
+                    { shortName: "CN", value: "FallbackUsed" },
+                  ],
+                },
               },
               attributes: {}, // sin friendlyName
             },
@@ -220,7 +231,7 @@ describe("ForgeCertificateProviderImplement", () => {
 
     const result = await provider.getCertificateData();
     expect(mockStrategy.getPrivateKey).toHaveBeenCalled();
-    expect(result.issuerName).toBe("Mocked Issuer");
+    expect(result.issuerName).toBe("CN=FallbackUsed,O=BCE,C=EC");
   });
 
   it("debería retornar el primer certificado si tiene más extensiones (ramo else de reduce)", async () => {

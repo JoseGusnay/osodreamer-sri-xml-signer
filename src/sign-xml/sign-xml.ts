@@ -27,7 +27,6 @@ export async function signXml(cmd: SignXmlRequest): Promise<string> {
       certData,
     });
 
-    console.log(`[signXml] XML firmado generado OK, longitud=${finalXml.length}`);
     return finalXml;
   } catch (error) {
     const handled = ErrorHandler.handle(error);
