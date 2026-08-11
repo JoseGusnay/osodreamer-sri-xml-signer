@@ -260,6 +260,58 @@ describe("InvoiceXmlFactory", () => {
     ]);
   });
 
+  // 3.1) Anexo 26 - RUC Proveedor
+  it("should append the Anexo 26 'RUC Proveedor' campoAdicional when rucProveedor is present", () => {
+    const invoice: ComprobanteType = {
+      ...getBaseInvoice(),
+      infoAdicional: {
+        campoAdicional: [{ nombre: "Nota", value: "Sin novedad" }],
+      },
+      rucProveedor: "1719369561001",
+    };
+
+    const result = factory.create(invoice);
+
+    expect(result.factura.infoAdicional!.campoAdicional).toEqual([
+      { $: { nombre: "Nota" }, _: "Sin novedad" },
+      { $: { nombre: "RUC Proveedor" }, _: "1719369561001" },
+    ]);
+  });
+
+  it("should create infoAdicional from rucProveedor alone", () => {
+    const invoice: ComprobanteType = {
+      ...getBaseInvoice(),
+      infoAdicional: null,
+      rucProveedor: "1719369561001",
+    };
+
+    const result = factory.create(invoice);
+
+    expect(result.factura.infoAdicional!.campoAdicional).toEqual([
+      { $: { nombre: "RUC Proveedor" }, _: "1719369561001" },
+    ]);
+  });
+
+  it("should not duplicate the RUC Proveedor campo when it also comes in infoAdicional", () => {
+    const invoice: ComprobanteType = {
+      ...getBaseInvoice(),
+      infoAdicional: {
+        campoAdicional: [
+          { nombre: "  ruc proveedor ", value: "1719369561001" },
+          { nombre: "Nota", value: "Sin novedad" },
+        ],
+      },
+      rucProveedor: "1719369561001",
+    };
+
+    const result = factory.create(invoice);
+
+    expect(result.factura.infoAdicional!.campoAdicional).toEqual([
+      { $: { nombre: "Nota" }, _: "Sin novedad" },
+      { $: { nombre: "RUC Proveedor" }, _: "1719369561001" },
+    ]);
+  });
+
   // 4) cobertura para detallesAdicionales con entries
   it("should include detalle adicionales cuando hay valores", () => {
     const invoice = {

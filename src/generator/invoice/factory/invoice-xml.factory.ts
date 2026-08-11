@@ -1,10 +1,18 @@
-import { documentTypeCodes, documentTypeName } from "../../const";
+import {
+  documentTypeCodes,
+  documentTypeName,
+  RUC_PROVEEDOR_CAMPO_NOMBRE,
+} from "../../const";
 import { IDENTIFICATION_CODE_ENUM } from "../../enums";
 
 import { InvoiceSriBuilder, Detalle } from "../models";
 import { ComprobanteType } from "../types";
 
-import { p_obtener_codigo_autorizacion, pad } from "../utils";
+import {
+  esCampoRucProveedor,
+  p_obtener_codigo_autorizacion,
+  pad,
+} from "../utils";
 
 export class InvoiceXmlFactory {
   create(invoice: ComprobanteType): InvoiceSriBuilder {
@@ -14,6 +22,7 @@ export class InvoiceXmlFactory {
       infoTributaria,
       infoAdicional,
       retenciones,
+      rucProveedor,
     } = invoice;
     const {
       ambiente,
@@ -148,11 +157,23 @@ export class InvoiceXmlFactory {
     // 1. Tomamos la lista (o único objeto) si existe
     const campoAdicional = infoAdicional?.campoAdicional;
 
-    if (campoAdicional) {
-      for (const campo of campoAdicional) {
+    if (campoAdicional || rucProveedor) {
+      for (const campo of campoAdicional ?? []) {
+        // Anexo 26: si viene "rucProveedor" es la fuente de verdad, evitamos duplicar el campo
+        if (rucProveedor && esCampoRucProveedor(campo.nombre)) {
+          continue;
+        }
         jsonFactura.factura.infoAdicional.campoAdicional.push({
           $: { nombre: campo.nombre },
           _: campo.value,
+        });
+      }
+
+      // Anexo 26: RUC del proveedor del sistema de facturación electrónica
+      if (rucProveedor) {
+        jsonFactura.factura.infoAdicional.campoAdicional.push({
+          $: { nombre: RUC_PROVEEDOR_CAMPO_NOMBRE },
+          _: rucProveedor,
         });
       }
     } else {

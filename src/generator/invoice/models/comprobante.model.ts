@@ -447,4 +447,15 @@ export class ComprobanteModel {
   @ValidateNested(() => InfoAdicionalModel)
   @IsOptional()
   infoAdicional?: InfoAdicionalModel;
+
+  /**
+   * Anexo 26: RUC del proveedor del sistema o servicio de facturacion
+   * electronica. Se agrega automaticamente a infoAdicional como
+   * <campoAdicional nombre="RUC Proveedor">.
+   */
+  @IsString()
+  @Length({ exact: 13 })
+  @IsNumericString()
+  @IsOptional()
+  rucProveedor?: string;
 }
