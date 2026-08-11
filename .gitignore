@@ -4,3 +4,5 @@
 /build
 /coverage
 /_verifications_
+# Tarballs generados por npm pack
+*.tgz
