@@ -5,6 +5,8 @@ import * as build from "../infrastructure/composition/buildSignXmlUseCase";
 import { CertificateProviderImplement } from "../infrastructure/certificate/certificate-provider.implement";
 import { XmlDomContext } from "../infrastructure/xml-dom-context/xml-dom.context";
 import { ErrorHandler } from "../infrastructure/handlers";
+import { InvalidP12PasswordError } from "../infrastructure/errors";
+import { SignXmlError } from "../infrastructure/interfaces";
 
 
 jest.mock("../infrastructure/validations/p12.validation");
@@ -88,5 +90,60 @@ describe("signXml", () => {
 
     await expect(signXml(input)).rejects.toThrow("Algo salió mal");
     expect(ErrorHandler.handle).toHaveBeenCalledWith(originalError);
+  });
+
+  it("debería adjuntar el code al error lanzado", async () => {
+    const originalError = new InvalidP12PasswordError();
+
+    (CertificateProviderImplement as jest.Mock).mockImplementation(() => ({
+      getCertificateData: jest.fn().mockRejectedValue(originalError),
+    }));
+
+    const input: SignXmlRequest = {
+      xmlBuffer: fakeXmlBuffer,
+      p12Buffer: new Uint8Array([0, 1, 2, 3]),
+      password: "incorrecta",
+    };
+
+    jest.spyOn(ErrorHandler, "handle").mockImplementation(() => ({
+      code: "P12_PASSWORD_ERROR",
+      message: originalError.message,
+      original: originalError,
+    }));
+
+    let error!: SignXmlError;
+    try {
+      await signXml(input);
+    } catch (e) {
+      error = e as SignXmlError;
+    }
+
+    expect(error.code).toBe("P12_PASSWORD_ERROR");
+    // el error sigue siendo el original: instanceof debe seguir funcionando
+    expect(error).toBeInstanceOf(InvalidP12PasswordError);
+    expect(error.message).toBe(
+      "El archivo P12 es válido, pero la contraseña es incorrecta."
+    );
+  });
+
+  it("no debería escribir en la consola del consumidor", async () => {
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    (CertificateProviderImplement as jest.Mock).mockImplementation(() => ({
+      getCertificateData: jest.fn().mockRejectedValue(new Error("boom")),
+    }));
+
+    const input: SignXmlRequest = {
+      xmlBuffer: fakeXmlBuffer,
+      p12Buffer: new Uint8Array([0, 1, 2, 3]),
+      password: "1234",
+    };
+
+    await expect(signXml(input)).rejects.toThrow();
+    expect(consoleError).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
   });
 });

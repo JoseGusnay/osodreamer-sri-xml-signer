@@ -1,6 +1,6 @@
 {
   "name": "osodreamer-sri-xml-signer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Genera, firma, valida y autoriza comprobantes electrónicos XML para el SRI de Ecuador con certificados digitales (.p12) y estándar XAdES-BES.",
   "author": {
     "name": "Jose Gusñay",
@@ -30,6 +30,7 @@
   "homepage": "https://github.com/JoseGusnay/osodreamer-sri-xml-signer#readme",
   "scripts": {
     "build": "tsup",
+    "prepublishOnly": "npm run build && npm test",
     "dev": "nodemon --watch src -e ts,json --exec \"tsup\"",
     "test": "jest",
     "test:coverage": "jest --coverage"

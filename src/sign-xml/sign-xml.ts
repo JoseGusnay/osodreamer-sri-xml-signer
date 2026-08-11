@@ -31,8 +31,8 @@ export async function signXml(cmd: SignXmlRequest): Promise<string> {
   } catch (error) {
     const handled = ErrorHandler.handle(error);
 
-    console.error(`[${handled.code}] ${handled.message}`);
-
-    throw handled.original;
+    // Adjuntamos el codigo al error original para que quien llama pueda
+    // discriminarlo sin depender del texto del mensaje.
+    throw Object.assign(handled.original, { code: handled.code });
   }
 }
