@@ -1,5 +1,10 @@
 export * from "./sign-xml/sign-xml";
 export * from "./sign-xml/domain/interfaces";
+// Caché del certificado descifrado: vaciarla si se rota el P12 en un proceso largo.
+export {
+  clearCertificateCache,
+  certificateCacheSize,
+} from "./sign-xml/infrastructure/certificate/certificate-cache";
 export * from "./generator/invoice/invoice.generator";
 export * from "./sri/services";
 

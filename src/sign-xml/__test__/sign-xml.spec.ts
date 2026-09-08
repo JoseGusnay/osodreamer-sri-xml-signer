@@ -7,6 +7,7 @@ import { XmlDomContext } from "../infrastructure/xml-dom-context/xml-dom.context
 import { ErrorHandler } from "../infrastructure/handlers";
 import { InvalidP12PasswordError } from "../infrastructure/errors";
 import { SignXmlError } from "../infrastructure/interfaces";
+import { clearCertificateCache } from "../infrastructure/certificate/certificate-cache";
 
 
 jest.mock("../infrastructure/validations/p12.validation");
@@ -32,6 +33,8 @@ describe("signXml", () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    // Cada prueba parte sin certificados recordados: la caché es global al proceso.
+    clearCertificateCache();
 
     // Mock validación del P12
     (validation.assertIsValidP12OrThrow as jest.Mock).mockResolvedValue(undefined);
@@ -67,6 +70,50 @@ describe("signXml", () => {
       input.password
     );
     expect(result).toBe("<FacturaFirmada/>");
+  });
+
+  it("recuerda el certificado: la segunda firma con el mismo P12 no lo valida ni lo descifra otra vez", async () => {
+    const input: SignXmlRequest = {
+      xmlBuffer: fakeXmlBuffer,
+      p12Buffer: new Uint8Array([9, 9, 9]),
+      password: "1234",
+    };
+
+    await signXml(input);
+    await signXml(input);
+
+    expect(validation.assertIsValidP12OrThrow).toHaveBeenCalledTimes(1);
+    expect(CertificateProviderImplement).toHaveBeenCalledTimes(1);
+  });
+
+  it("otra contraseña o otro P12 no reutilizan el certificado", async () => {
+    const base: SignXmlRequest = {
+      xmlBuffer: fakeXmlBuffer,
+      p12Buffer: new Uint8Array([9, 9, 9]),
+      password: "1234",
+    };
+
+    await signXml(base);
+    await signXml({ ...base, password: "otra" });
+    await signXml({ ...base, p12Buffer: new Uint8Array([9, 9, 8]) });
+
+    expect(CertificateProviderImplement).toHaveBeenCalledTimes(3);
+  });
+
+  it("un P12 que falla no queda en la caché", async () => {
+    (CertificateProviderImplement as jest.Mock).mockImplementationOnce(() => ({
+      getCertificateData: jest.fn().mockRejectedValue(new Error("boom")),
+    }));
+    const input: SignXmlRequest = {
+      xmlBuffer: fakeXmlBuffer,
+      p12Buffer: new Uint8Array([7, 7, 7]),
+      password: "1234",
+    };
+
+    await expect(signXml(input)).rejects.toThrow("boom");
+    await expect(signXml(input)).resolves.toBe("<FacturaFirmada/>");
+
+    expect(CertificateProviderImplement).toHaveBeenCalledTimes(2);
   });
 
   it("debería lanzar el error original si algo falla", async () => {

@@ -18,4 +18,14 @@ describe("buildSignXmlUseCase", () => {
     expect(useCase).toBeInstanceOf(SignXmlUseCase);
     expect(typeof useCase.execute).toBe("function");
   });
+
+  it("acepta un SignerPort ya elegido (nativo o forge) en vez de la clave", () => {
+    const signer = { signSha1RsaBase64: jest.fn(() => "firma") };
+    const xml = `<?xml version="1.0" encoding="UTF-8"?><root></root>`;
+    const context = new XmlDomContext(xml);
+
+    const useCase = buildSignXmlUseCase(signer, context);
+
+    expect(useCase).toBeInstanceOf(SignXmlUseCase);
+  });
 });
